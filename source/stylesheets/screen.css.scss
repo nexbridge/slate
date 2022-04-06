@@ -480,9 +480,11 @@ html, body {
   }
 
   aside:before {
-    vertical-align: middle;
+    vertical-align: baseline;
+    position: relative;
+    top: 3px;
+    font-size: 18px;
     padding-right: 0.5em;
-    font-size: 14px;
   }
 
   aside.notice:before {
