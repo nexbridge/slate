@@ -6,5 +6,5 @@ rm -rf $THIS_DIR/build/*
 
 bundle exec middleman build --clean
 
-scp -r -P 2002 $THIS_DIR/build/* root@web2.do.nexbridge.co.uk:/var/www/apidocs.nexbridge.co.uk
+scp -r $THIS_DIR/build/* root@web1.do.nexbridge.co.uk:/var/www/apidocs.nexbridge.co.uk
 

@@ -468,7 +468,7 @@ function is_reserved_IP($IP, $reservedCIDRranges)
 }
 ```
 
-> Telephone number validation (length restrictions provided dynamically)
+> Basic telephone number validation (length restrictions provided dynamically)
 
 ```php
 <?php
@@ -510,21 +510,21 @@ function is_telephone_number($number, $minLength, $maxLength)
 		return false;
 	}
 	
+	$length = strlen($number);
+	
 	/* If UK number */
 	if (substr($number, 0, 3) === "+44")
 	{
 		/* If non-standard length (a few shorter numbers do exist, but it's much more likely to be a missing digit) */
-		if (strlen($number) != 13)
+		if ($length != 13)
 		{
 			return false;
 		}
-		
-		/* Add code here to check number belongs to Ofcom-allocated range, using data available at https://static.ofcom.org.uk/static/numbering */
 	}
 	else
 	{
 		/* If invalid length or invalid prefix */
-		if (strlen($number) < $minLength || strlen($number) > $maxLength || substr($number, 0, 2) === "+0")
+		if ($length < $minLength || $length > $maxLength || substr($number, 0, 2) === "+0")
 		{
 			return false;
 		}
@@ -553,7 +553,7 @@ Data&nbsp;type    | Dynamic properties           | Description/format
 `name`            | `maxLength`                  | Person's name
 `password`        | `minLength`                  | Password with at least one non-alphabetic character
 `postcode`        | `maxLength`                  | Postcode
-`restrictedPhone` | `maxLength`, `minLength`     | Telephone number that does not belong to a barred range
+`routablePhone`   | `maxLength`, `minLength`     | Telephone number that does not belong to a barred range
 `text`            | `maxLength`                  | Generic text
 `timestamp`       | `max`, `min`                 | YYYY-MM-DD HH:MM:SS
 
@@ -771,24 +771,24 @@ This object handles customer account settings.
 
 Name               | Description             | Required for | Returned by
 ------------------ | ----------------------- | ------------ | -----------
-`bundleCharge`     | Bundle charge&nbsp;(£)  |              | `view`
-`bundledMinutes`   | Bundled minutes         |              | `view`
 `customerID`       | Customer&nbsp;ID        | `edit`       | `view`
 `issueProformas`   | See notes               | `edit`       | `view`
 `paymentMethod`    | Payment method          |              | `view`
 `referenceName`    | Customer reference name |              | `view`
 `VATrate`          | VAT rate                |              | `view`
 `VATreverseCharge` | VAT reverse charge      |              | `view`
+[comment]: # (`bundleCharge`     | Bundle charge&nbsp;(£)  |              | `view`)
+[comment]: # (`bundledMinutes`   | Bundled minutes         |              | `view`)
 
 ### Notes
 
 The `issueProformas` field determines whether proformas are issued to the relevant accounts contacts on receipt of payments, and is only populated (and thus an `edit` request is only accepted) where the `paymentMethod` value is 'pre-payment'.
 
-The `bundleCharge` and `bundledMinutes` fields are only populated for customers with bundled minutes.
+[comment]: # (The `bundleCharge` and `bundledMinutes` fields are only populated for customers with bundled minutes.)
 
 ### API codes
 
-The following [API codes](#responses) can be returned by this object for handling client-side errors:
+The following [API codes](#responses) can be returned by this object:
 
 API code | Description
 -------- | -----------
@@ -810,24 +810,25 @@ Name               | Description                | Required for | Returned by
 `balanceAvailable` | Balance available&nbsp;(£) |              | `view`
 `creditLimit`      | Credit limit&nbsp;(£)      |              | `view`
 `customerID`       | Customer&nbsp;ID           |              | `view`
-`minutesRemaining` | Minutes remaining          |              | `view`
 `referenceName`    | Customer reference name    |              | `view`
+[comment]: # (`minutesRemaining` | Minutes remaining          |              | `view`)
 
 ### Notes
 
 The `active` field specifies whether traffic is currently allowed to route for the customer.
 
-The `minutesRemaining` field is only populated for customers with bundled minutes.
+[comment]: # (The `minutesRemaining` field is only populated for customers with bundled minutes.)
 
-The `balanceAvailable` and `creditLimit` fields are only populated for customers without bundled minutes.
+[comment]: # (The `balanceAvailable` and `creditLimit` fields are only populated for customers without bundled minutes.)
 
 ### Additional dynamic information
 
 The following additional information is provided [dynamically](#requests):
 
-Name              | Description                                                                            | [Data&nbsp;type](#data-types-and-validation) | Array
------------------ | -------------------------------------------------------------------------------------- | -------------------------------------------- | -----
-`updateFrequency` | How often the `balanceAvailable` and `minutesRemaining` fields are updated, in minutes | `integer`                                    | No
+Name              | Description                                                   | [Data&nbsp;type](#data-types-and-validation) | Array
+----------------- | ------------------------------------------------------------- | -------------------------------------------- | -----
+`updateFrequency` | How often the `balanceAvailable` field is updated, in minutes | `integer`                                    | No
+[comment]: # (`updateFrequency` | How often the `balanceAvailable` and `minutesRemaining` fields are updated, in minutes | `integer`                                    | No)
 
 ## Billing Address
 
@@ -937,6 +938,14 @@ Name         | Description                         | Required for | Returned by
 
 Sorting is not available for this object due to the size of the data sets involved.
 
+### API codes
+
+The following [API codes](#responses) can be returned by this object:
+
+API code | Description
+-------- | -----------
+433      | Request timed out
+
 ## Contact
 
 This object handles customer contact details.
@@ -957,7 +966,6 @@ Name                 | Description                 | Required for     | Returned
 `surname`            | Contact surname             | `add`, `edit`    | `view`
 `telephoneExtension` | Contact telephone extension | `add`, `edit`    | `view`
 `telephoneNumber`    | Contact telephone number    | `add`, `edit`    | `view`
-`title`              | Contact title               | `add`, `edit`    | `view`
 `type`               | Contact type                | `add`, `edit`    | `view`
 
 ### Notes
@@ -965,22 +973,19 @@ Name                 | Description                 | Required for     | Returned
 When making an `add` or `edit` request:
 
 * The `telephoneExtension` field is always nullable and can only be set when the `telephoneNumber` field is populated;
-* Some other required fields are also nullable depending on the value of the `type` field, as specified in the table below, with the following exceptions:
-
-1. The `forename` field must be set if the `surname` field is populated, and vice versa;
-2. Both the `forename` and `surname` fields must be set if the `title` field is populated.
+* Some other required fields are also nullable depending on the value of the `type` field, as specified in the table below, however the `forename` field must be set if the `surname` field is populated, and vice versa.
 
 Contact type | Nullable fields
 ------------ | ---------------
 Accounts     | None
-Alerts       | `forename`, `surname`, `telephoneNumber`, `title` 
-Complaints   | `forename`, `surname`, `telephoneNumber`, `title`
+Alerts       | `forename`, `surname`, `telephoneNumber`
+Complaints   | `forename`, `surname`, `telephoneNumber`
 General      | `emailAddress` or `telephoneNumber` (but not both)
-Nuisance     | `forename`, `surname`, `telephoneNumber`, `title`
+Nuisance     | `forename`, `surname`, `telephoneNumber`
 Primary      | None
-Rates        | `forename`, `surname`, `telephoneNumber`, `title`
-Reports      | `forename`, `surname`, `telephoneNumber`, `title`
-Routing      | `forename`, `surname`, `telephoneNumber`, `title`
+Rates        | `forename`, `surname`, `telephoneNumber`
+Reports      | `forename`, `surname`, `telephoneNumber`
+Routing      | `forename`, `surname`, `telephoneNumber`
 Technical    | None
 
 ### Additional dynamic information
@@ -993,7 +998,7 @@ Name           | Description                                           | [Data&n
 
 ### API codes
 
-The following [API codes](#responses) can be returned by this object for handling client-side errors:
+The following [API codes](#responses) can be returned by this object:
 
 API code | Description
 -------- | -----------
@@ -1001,6 +1006,7 @@ API code | Description
 408      | Customer should have at least one primary, accounts and technical contact
 409      | Customer has reports distributed via email
 418      | No changes effected
+432      | Number range invalid
 
 ## Dial Sure Summary
 
@@ -1122,7 +1128,7 @@ Users can only edit their own password. Resetting another user's password return
 
 ### API codes
 
-The following [API codes](#responses) can be returned by this object for handling client-side errors:
+The following [API codes](#responses) can be returned by this object:
 
 API code | Description
 -------- | -----------
@@ -1156,7 +1162,7 @@ The `edit` and `remove` actions are only available for standard reports.
 
 ### API codes
 
-The following [API codes](#responses) can be returned by this object for handling client-side errors:
+The following [API codes](#responses) can be returned by this object:
 
 API code | Description
 -------- | -----------
@@ -1204,7 +1210,7 @@ Name                           | Description                                    
 
 ### API codes
 
-The following [API codes](#responses) can be returned by this object for handling client-side errors:
+The following [API codes](#responses) can be returned by this object:
 
 API code | Description
 -------- | -----------
@@ -1259,7 +1265,7 @@ Name              | Description                               | [Data&nbsp;type]
 
 ### API codes
 
-The following [API codes](#responses) can be returned by this object for handling client-side errors:
+The following [API codes](#responses) can be returned by this object:
 
 API code | Description
 -------- | -----------
