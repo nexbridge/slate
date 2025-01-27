@@ -777,14 +777,10 @@ Name               | Description             | Required for | Returned by
 `referenceName`    | Customer reference name |              | `view`
 `VATrate`          | VAT rate                |              | `view`
 `VATreverseCharge` | VAT reverse charge      |              | `view`
-[comment]: # (`bundleCharge`     | Bundle charge&nbsp;(£)  |              | `view`)
-[comment]: # (`bundledMinutes`   | Bundled minutes         |              | `view`)
 
 ### Notes
 
 The `issueProformas` field determines whether proformas are issued to the relevant accounts contacts on receipt of payments, and is only populated (and thus an `edit` request is only accepted) where the `paymentMethod` value is 'pre-payment'.
-
-[comment]: # (The `bundleCharge` and `bundledMinutes` fields are only populated for customers with bundled minutes.)
 
 ### API codes
 
@@ -811,15 +807,10 @@ Name               | Description                | Required for | Returned by
 `creditLimit`      | Credit limit&nbsp;(£)      |              | `view`
 `customerID`       | Customer&nbsp;ID           |              | `view`
 `referenceName`    | Customer reference name    |              | `view`
-[comment]: # (`minutesRemaining` | Minutes remaining          |              | `view`)
 
 ### Notes
 
 The `active` field specifies whether traffic is currently allowed to route for the customer.
-
-[comment]: # (The `minutesRemaining` field is only populated for customers with bundled minutes.)
-
-[comment]: # (The `balanceAvailable` and `creditLimit` fields are only populated for customers without bundled minutes.)
 
 ### Additional dynamic information
 
@@ -828,7 +819,6 @@ The following additional information is provided [dynamically](#requests):
 Name              | Description                                                   | [Data&nbsp;type](#data-types-and-validation) | Array
 ----------------- | ------------------------------------------------------------- | -------------------------------------------- | -----
 `updateFrequency` | How often the `balanceAvailable` field is updated, in minutes | `integer`                                    | No
-[comment]: # (`updateFrequency` | How often the `balanceAvailable` and `minutesRemaining` fields are updated, in minutes | `integer`                                    | No)
 
 ## Billing Address
 
