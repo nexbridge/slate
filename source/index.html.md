@@ -70,6 +70,10 @@ function API_request($username, $password, $object = NULL, $action = NULL, $para
 		case "remove":
 			curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
 			curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($parameters));
+			break;
+			
+		default:
+			/* Handle unexpected action */
 		}
 	}
 	
@@ -82,7 +86,7 @@ function API_request($username, $password, $object = NULL, $action = NULL, $para
 	
 	if ($result === false)
 	{
-		$error = curl_error($ch);
+		$curlError = curl_error($ch);
 	}
 	else
 	{
@@ -92,7 +96,7 @@ function API_request($username, $password, $object = NULL, $action = NULL, $para
 	
 	curl_close($ch);
 	
-	if (!isset($error))
+	if (!isset($curlError))
 	{
 		if ($HTTPcode == 200)
 		{
@@ -100,15 +104,21 @@ function API_request($username, $password, $object = NULL, $action = NULL, $para
 			{
 			case "application/json":
 				/* Handle JSON response */
-		
+			
 			case "application/pdf":
 				/* Handle PDF download */
-		
+			
 			case "application/xml":
 				/* Handle XML response */
 			
 			case "audio/mpeg":
 				/* Handle MP3 download */
+			
+			case "text/html":
+				/* Handle HTML response */
+				
+			default:
+				/* Handle unexpected content type */
 			}
 		}
 		else
@@ -221,7 +231,7 @@ The example API request function on the right generates the correct request meth
 
 ### Responses
 
-Any request rejected by the web server (rather than by the API) will receive one of the standard HTTP error responses.  Any request that reaches the API endpoint successfully will **always** receive a HTTP status code of 200, with bespoke **API codes** then being used to indicate the result of the request whenever a JSON/XML response is returned (see below).  The format of the response will depend on the type of request and will be specified by the `Content-Type` header, so once you've checked the HTTP status code for success this header should be used to determine how to handle the response, as illustrated in the example API request function on the right.  The formats used in this API are as follows:
+Any request rejected by the web server (rather than by the API) will receive one of the standard HTTP error responses.  Any request that reaches the API endpoint successfully will **always** receive a HTTP status code of 200, with custom **API codes** then being used to indicate the result of the request whenever a JSON/XML response is returned (see below).  The format of the response will depend on the type of request and will be specified by the `Content-Type` header, so once you've checked the HTTP status code for success this header should be used to determine how to handle the response, as illustrated in the example API request function on the right.  The formats used in this API are as follows:
 
 * PDFs are returned as `application/pdf`;
 * MP3s are returned as `audio/mpeg`;
@@ -252,7 +262,7 @@ API&nbsp;code | Description
 
 # Data types and validation
 
-> Barred number range check (list of barred ranges provided dynamically)
+> Barred telephone number range check (list of barred ranges provided dynamically)
 
 ```php
 <?php
@@ -504,7 +514,7 @@ function is_telephone_number($number, $minLength, $maxLength)
 		return false;
 	}
 	
-	/* If not integer */
+	/* If number not comprised of digits */
 	if (!ctype_digit(substr($number, 1)))
 	{
 		return false;
@@ -538,24 +548,30 @@ This section provides details regarding the data types that are used in this API
 
 A description of each data type is given below, along with any [dynamic properties](#dynamic-field-properties) available for that type (N.B. these properties are only specified for [object fields](#fields)):
 
-Data&nbsp;type    | Dynamic properties           | Description/format
------------------ | ---------------------------- | ------------------
-`alphanumeric`    | `maxLength`                  | Alphanumeric text
-`boolean`         |                              | Boolean value
-`CIDR`            |                              | IPv4 range given in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing) notation
-`date`            | `max`, `min`                 | YYYY-MM-DD
-`decimal`         | `decimalPlaces`, `maxDigits` | Decimal number
-`email`           | `maxLength`                  | Email address
-`enum`            |                              | Enumerable list obtainable via an `enumerate` action
-`host`            | `maxLength`                  | Network host that does not belong to a reserved range
-`integer`         | `max`, `min`                 | Integer number
-`month`           | `max`, `min`                 | YYYY-MM
-`name`            | `maxLength`                  | Person's name
-`password`        | `minLength`                  | Password with at least one non-alphabetic character
-`postcode`        | `maxLength`                  | Postcode
-`routablePhone`   | `maxLength`, `minLength`     | Telephone number that does not belong to a barred range
-`text`            | `maxLength`                  | Generic text
-`timestamp`       | `max`, `min`                 | YYYY-MM-DD HH:MM:SS
+Data&nbsp;type    | Dynamic&nbsp;properties                | Description/format
+----------------- | -------------------------------------- | ------------------
+`alphanumeric`    | `maxLength`                            | Alphanumeric text
+`boolean`         |                                        | Boolean value
+`CIDR`            |                                        | IPv4 range given in [CIDR](https://en.wikipedia.org/wiki/Classless_Inter-Domain_Routing) notation
+`date`            | `max`, `min`                           | YYYY-MM-DD
+`decimal`         | `decimalPlaces`, `maxDigits`, `signed` | Decimal number
+`email`           | `maxLength`                            | Email address
+`enum`            |                                        | Enumerable list obtainable via an `enumerate` action
+`host`            | `maxLength`                            | Network host that does not belong to a reserved range
+`integer`         | `max`, `min`                           | Integer number
+`IP`              |                                        | IPv4 address
+`month`           | `max`, `min`                           | YYYY-MM
+`name`            | `maxLength`                            | Person's name
+`password`        | `minLength`                            | Password with at least one non-alphabetic character
+`phone`           | `maxLength`\*, `minLength`\*           | Telephone number
+`phoneRange`      |                                        | Telephone number range
+`postcode`        | `maxLength`                            | Postcode
+`restrictedPhone` | `maxLength`\*, `minLength`\*           | UK 01/02/03/080 telephone number
+`routablePhone`   | `maxLength`\*, `minLength`\*           | Telephone number that does not belong to a barred range
+`text`            | `maxLength`                            | Generic text
+`timestamp`       | `max`, `min`                           | YYYY-MM-DD HH:MM:SS
+
+\* When in [E.164](https://en.wikipedia.org/wiki/E.164) standard format with a leading plus
 
 # Pagination, filters and sorts
 
@@ -631,7 +647,7 @@ would list the results for the first page,
 
 `/User/view?limit=10&offset=10`
 
-would list the results for the second page, and so on.  The total number of results available is also returned each time under `result`->`totalAvailable` so that you can calculate the total number of pages.
+would list the results for the second page, and so on.  The total number of results available is also returned each time under `result`&rarr;`totalAvailable` so that you can calculate the total number of pages.
 
 ### Filters
 
@@ -682,37 +698,39 @@ will sort the results **first** by `surname` descending, **then** by `forename` 
 
 # Objects
 
+## Introduction
+
 This section provides details of the objects available to customers using this API.
 
 ### Fields
 
 Each individual object description includes details of the fields that are either required or returned by the object for certain actions.
 
-* Returned field values are always contained in `result`->`data`.
-* Required fields are not nullable unless otherwise specified; if a required field is nullable then that means it must be present in the request but its value can be empty.
+* Returned field values are always contained in `result`&rarr;`data`.
+* Required fields are not nullable unless otherwise specified; if a required field is nullable then that means it must be present in the request but its value can be an empty string.
 
 ### Dynamic object information
 
-The following information can be requested [dynamically](#requests) for any object and is returned under `result`->*`[object]`*:
+The following information can be requested [dynamically](#requests) for any object and is returned under `result`&rarr;*`[object]`*:
 
 Name               | Description                                   | Array
 ------------------ | --------------------------------------------- | -----
 `availableActions` | Contains the actions available for the object | Yes
 `fields`           | Contains any dynamic properties of the fields | Yes
 
-Any additional object-specific dynamic information is listed in the individual object descriptions below.
+Any additional object-specific dynamic information is listed in the individual object descriptions.
 
 ### Dynamic field properties
 
-Each dynamic field property has a scalar (i.e. non-array) value, and is returned under `result`->*`[object]`*->`fields`->*`[field]`*->*`[property]`*.  A description of each property is given below:
+Each dynamic field property has a scalar (i.e. non-array) value, and is returned under `result`&rarr;*`[object]`*&rarr;`fields`&rarr;*`[field]`*&rarr;*`[property]`*.  A description of each property is given below:
 
 Property        | [Data&nbsp;type](#data-types-and-validation) | Description
 ----------------| -------------------------------------------- | -----------
 `decimalPlaces` | `integer`                                    | The number of digits allowed after the decimal point
-`max`           | Same as the data type in question            | The maximum value allowed
+`max`           | Same&nbsp;as&nbsp;the&nbsp;field             | The maximum value allowed
 `maxDigits`     | `integer`                                    | The maximum number of digits allowed, including the decimal places (but not the decimal point)
 `maxLength`     | `integer`                                    | The maximum number of characters allowed
-`min`           | Same as the data type in question            | The minimum value allowed
+`min`           | Same&nbsp;as&nbsp;the&nbsp;field             | The minimum value allowed
 `minLength`     | `integer`                                    | The minimum number of characters allowed
 `nullable`      | `boolean`                                    | `true` if the field can be empty, or `false` otherwise
 `signed`        | `boolean`                                    | `true` if negative values are allowed, or `false` otherwise
@@ -727,7 +745,7 @@ The `enumerate` action is available for all object fields whose [data type](#dat
 
 `/Contact/enumerate?fields[]=title&fields[]=type`
 
-The resulting enumerated list for each field is then returned under `result`->*`[field]`*.
+The resulting enumerated list for each field is then returned under `result`&rarr;*`[field]`*.
 
 ## Access Charges
 
@@ -739,24 +757,24 @@ This object provides information regarding network access charges.
 
 ### Fields
 
-Name          | Description        | Required for | Returned by
-------------- | ------------------ | ------------ | -----------
-`customerID`  | Customer&nbsp;ID   | `view`       | 
-`description` | Charge description |              | `view`
-`month`       | Month              | `view`       |
-`PPCday`      | PPC&nbsp;daytime   |              | `view`
-`PPCeve`      | PPC&nbsp;evening   |              | `view`
-`PPCwkd`      | PPC&nbsp;weekend   |              | `view`
-`PPMday`      | PPM&nbsp;daytime   |              | `view`
-`PPMeve`      | PPM&nbsp;evening   |              | `view`
-`PPMwkd`      | PPM&nbsp;weekend   |              | `view`
+Name          | Description        | Required&nbsp;for | Returned&nbsp;by
+------------- | ------------------ | ----------------- | ----------------
+`customerID`  | Customer&nbsp;ID   | `view`            | 
+`description` | Charge description |                   | `view`
+`month`       | Month              | `view`            |
+`PPCday`      | PPC&nbsp;daytime   |                   | `view`
+`PPCeve`      | PPC&nbsp;evening   |                   | `view`
+`PPCwkd`      | PPC&nbsp;weekend   |                   | `view`
+`PPMday`      | PPM&nbsp;daytime   |                   | `view`
+`PPMeve`      | PPM&nbsp;evening   |                   | `view`
+`PPMwkd`      | PPM&nbsp;weekend   |                   | `view`
 
 ### Additional dynamic information
 
 The following additional information is provided [dynamically](#requests):
 
 Name               | Description                                                        | [Data&nbsp;type](#data-types-and-validation) | Array
--------------------| ------------------------------------------------------------------ | -------------------------------------------- | -----
+------------------ | ------------------------------------------------------------------ | -------------------------------------------- | -----
 `rateCardIssueDay` | Day of the month the following month's rate card is made available | `integer`                                    | No
 
 ## Account Settings
@@ -769,14 +787,14 @@ This object handles customer account settings.
 
 ### Fields
 
-Name               | Description             | Required for | Returned by
------------------- | ----------------------- | ------------ | -----------
-`customerID`       | Customer&nbsp;ID        | `edit`       | `view`
-`issueProformas`   | See notes               | `edit`       | `view`
-`paymentMethod`    | Payment method          |              | `view`
-`referenceName`    | Customer reference name |              | `view`
-`VATrate`          | VAT rate                |              | `view`
-`VATreverseCharge` | VAT reverse charge      |              | `view`
+Name               | Description             | Required&nbsp;for | Returned&nbsp;by
+------------------ | ----------------------- | ----------------- | ----------------
+`customerID`       | Customer&nbsp;ID        | `edit`            | `view`
+`issueProformas`   | See notes               | `edit`            | `view`
+`paymentMethod`    | Payment method          |                   | `view`
+`referenceName`    | Customer reference name |                   | `view`
+`VATrate`          | VAT rate                |                   | `view`
+`VATreverseCharge` | VAT reverse charge      |                   | `view`
 
 ### Notes
 
@@ -786,9 +804,9 @@ The `issueProformas` field determines whether proformas are issued to the releva
 
 The following [API codes](#responses) can be returned by this object:
 
-API code | Description
--------- | -----------
-418      | No changes effected
+API&nbsp;code | Description         | Returned&nbsp;by
+------------- | ------------------- | ----------------
+418           | No changes effected | `edit`
 
 ## Balance
 
@@ -800,13 +818,13 @@ This object provides information regarding the current account balance.
 
 ### Fields
 		
-Name               | Description                | Required for | Returned by
------------------- | -------------------------- | ------------ | -----------
-`active`           | See notes                  |              | `view`
-`balanceAvailable` | Balance available&nbsp;(£) |              | `view`
-`creditLimit`      | Credit limit&nbsp;(£)      |              | `view`
-`customerID`       | Customer&nbsp;ID           |              | `view`
-`referenceName`    | Customer reference name    |              | `view`
+Name               | Description                | Required&nbsp;for | Returned&nbsp;by
+------------------ | -------------------------- | ----------------- | ----------------
+`active`           | See notes                  |                   | `view`
+`balanceAvailable` | Balance available&nbsp;(£) |                   | `view`
+`creditLimit`      | Credit limit&nbsp;(£)      |                   | `view`
+`customerID`       | Customer&nbsp;ID           |                   | `view`
+`referenceName`    | Customer reference name    |                   | `view`
 
 ### Notes
 
@@ -830,17 +848,17 @@ This object provides the billing address currently used on invoices.
 
 ### Fields
 
-Name            | Description             | Required for | Returned by
---------------- | ----------------------- | ------------ | -----------
-`addressLine1`  | Address line&nbsp;1     |              | `view`
-`addressLine2`  | Address line&nbsp;2     |              | `view`
-`addressLine3`  | Address line&nbsp;3     |              | `view`
-`addressLine4`  | Address line&nbsp;4     |              | `view`
-`billingName`   | Customer billing name   |              | `view`
-`country`       | Country                 |              | `view`
-`customerID`    | Customer&nbsp;ID        |              | `view`
-`postcode`      | Postcode                |              | `view`
-`referenceName` | Customer reference name |              | `view`
+Name            | Description             | Required&nbsp;for | Returned&nbsp;by
+--------------- | ----------------------- | ----------------- | ----------------
+`addressLine1`  | Address line&nbsp;1     |                   | `view`
+`addressLine2`  | Address line&nbsp;2     |                   | `view`
+`addressLine3`  | Address line&nbsp;3     |                   | `view`
+`addressLine4`  | Address line&nbsp;4     |                   | `view`
+`billingName`   | Customer billing name   |                   | `view`
+`country`       | Country                 |                   | `view`
+`customerID`    | Customer&nbsp;ID        |                   | `view`
+`postcode`      | Postcode                |                   | `view`
+`referenceName` | Customer reference name |                   | `view`
 
 ## Call Recording
 
@@ -852,15 +870,15 @@ This object provides details of recent call recordings.
 
 ### Fields
 
-Name            | Description                | Required for | Returned by
---------------- | -------------------------- | ------------ | -----------
-`CLI`           | Telephone number presented |              | `view`
-`customerID`    | Customer&nbsp;ID           |              | `view`
-`DNI`           | Telephone number dialled   |              | `view`
-`duration`      | Duration (seconds)         |              | `view`
-`endTime`       | Call end time              |              | `view`
-`objectID`      | Object&nbsp;ID             | `download`   | `view`
-`referenceName` | Customer reference name    |              | `view`
+Name            | Description                | Required&nbsp;for | Returned&nbsp;by
+--------------- | -------------------------- | ----------------- | ----------------
+`CLI`           | Telephone number presented |                   | `view`
+`customerID`    | Customer&nbsp;ID           |                   | `view`
+`DNI`           | Telephone number dialled   |                   | `view`
+`duration`      | Duration, in seconds       |                   | `view`
+`endTime`       | Call end time              |                   | `view`
+`objectID`      | Object&nbsp;ID             | `download`        | `view`
+`referenceName` | Customer reference name    |                   | `view`
 
 ## Call Summary
 
@@ -872,25 +890,25 @@ This object provides a summary of recent call charges.
 
 ### Fields
 
-Name            | Description              | Required for | Returned by
---------------- | ------------------------ | ------------ | -----------
-`answeredCalls` | Number of answered calls |              | `view`
-`cost`          | Call cost&nbsp;(£)       |              | `view`
-`customerID`    | Customer&nbsp;ID         |              | `view`
-`date`          | Date                     |              | `view`
-`description`   | Description              |              | `view`
-`direction`     | Call direction           |              | `view`
-`minutes`       | Call minutes             |              | `view`
-`prefix`        | Rate prefix              |              | `view`
-`referenceName` | Customer reference name  |              | `view`
-`timeband`      | Time band                |              | `view`
+Name            | Description              | Required&nbsp;for | Returned&nbsp;by
+--------------- | ------------------------ | ----------------- | ----------------
+`answeredCalls` | Number of answered calls |                   | `view`
+`cost`          | Call cost&nbsp;(£)       |                   | `view`
+`customerID`    | Customer&nbsp;ID         |                   | `view`
+`date`          | Date                     |                   | `view`
+`description`   | Description              |                   | `view`
+`direction`     | Call direction           |                   | `view`
+`minutes`       | Call minutes             |                   | `view`
+`prefix`        | Rate prefix              |                   | `view`
+`referenceName` | Customer reference name  |                   | `view`
+`timeband`      | Time band                |                   | `view`
 
 ### Additional view information
 
 For `view` requests, the following additional information is returned inside `result`:
 
 Name                 | Description                    | [Data&nbsp;type](#data-types-and-validation)
--------------------- | ------------------------------ | ---------------------------------------
+-------------------- | ------------------------------ | --------------------------------------------
 `totalAnsweredCalls` | Total number of answered calls | `integer`
 `totalCost`          | Total call cost&nbsp;(£)       | `decimal`
 `totalMinutes`       | Total call minutes             | `decimal`
@@ -908,21 +926,21 @@ This object provides recent CDRs for all chargeable calls.
 
 ### Fields
 
-Name         | Description                         | Required for | Returned by
------------- | ----------------------------------- | ------------ | -----------
-`answerTime` | Call answer time                    |              | `view`
-`CLIin`      | Telephone number presented&nbsp;in  |              | `view`
-`CLIout`     | Telephone number presented&nbsp;out |              | `view`
-`cost`       | Call cost&nbsp;(£)                  |              | `view`
-`customerID` | Customer&nbsp;ID                    | `view`       | 
-`direction`  | Call direction                      |              | `view`
-`DNIin`      | Telephone number dialled&nbsp;in    |              | `view`
-`DNIout`     | Telephone number dialled&nbsp;out   |              | `view`
-`duration`   | Call duration (seconds)             |              | `view`
-`endTime`    | Call end time                       |              | `view`
-`prefix`     | Rate prefix                         |              | `view`
-`source`     | Call source                         |              | `view`
-`timeband`   | Time band                           |              | `view`
+Name         | Description                         | Required&nbsp;for | Returned&nbsp;by
+------------ | ----------------------------------- | ----------------- | ----------------
+`answerTime` | Call answer time                    |                   | `view`
+`CLIin`      | Telephone number presented&nbsp;in  |                   | `view`
+`CLIout`     | Telephone number presented&nbsp;out |                   | `view`
+`cost`       | Call cost&nbsp;(£)                  |                   | `view`
+`customerID` | Customer&nbsp;ID                    | `view`            | 
+`direction`  | Call direction                      |                   | `view`
+`DNIin`      | Telephone number dialled&nbsp;in    |                   | `view`
+`DNIout`     | Telephone number dialled&nbsp;out   |                   | `view`
+`duration`   | Call duration, in seconds           |                   | `view`
+`endTime`    | Call end time                       |                   | `view`
+`prefix`     | Rate prefix                         |                   | `view`
+`source`     | Call source                         |                   | `view`
+`timeband`   | Time band                           |                   | `view`
 
 ### Notes
 
@@ -932,9 +950,9 @@ Sorting is not available for this object due to the size of the data sets involv
 
 The following [API codes](#responses) can be returned by this object:
 
-API code | Description
--------- | -----------
-433      | Request timed out
+API&nbsp;code | Description       | Returned&nbsp;by
+------------- | ----------------- | ----------------
+433           | Request timed out | `view`
 
 ## Contact
 
@@ -946,17 +964,17 @@ This object handles customer contact details.
 
 ### Fields
 
-Name                 | Description                 | Required for     | Returned by
--------------------- | --------------------------- | ---------------- | -----------
-`customerID`         | Customer&nbsp;ID            | `add`, `edit`    | `view`
-`emailAddress`       | Contact email address       | `add`, `edit`    | `view`
-`forename`           | Contact forename            | `add`, `edit`    | `view`
-`objectID`           | Object&nbsp;ID              | `edit`, `remove` | `add`, `view`
-`referenceName`      | Customer reference name     |                  | `view`
-`surname`            | Contact surname             | `add`, `edit`    | `view`
-`telephoneExtension` | Contact telephone extension | `add`, `edit`    | `view`
-`telephoneNumber`    | Contact telephone number    | `add`, `edit`    | `view`
-`type`               | Contact type                | `add`, `edit`    | `view`
+Name                 | Description                 | Required&nbsp;for      | Returned&nbsp;by
+-------------------- | --------------------------- | ---------------------- | ----------------
+`customerID`         | Customer&nbsp;ID            | `add`,&nbsp;`edit`     | `view`
+`emailAddress`       | Contact email address       | `add`,&nbsp;`edit`     | `view`
+`forename`           | Contact forename            | `add`,&nbsp;`edit`     | `view`
+`objectID`           | Object&nbsp;ID              | `edit`,&nbsp;`remove`  | `add`,&nbsp;`view`
+`referenceName`      | Customer reference name     |                        | `view`
+`surname`            | Contact surname             | `add`,&nbsp;`edit`     | `view`
+`telephoneExtension` | Contact telephone extension | `add`,&nbsp;`edit`     | `view`
+`telephoneNumber`    | Contact telephone number    | `add`,&nbsp;`edit`     | `view`
+`type`               | Contact type                | `add`,&nbsp;`edit`     | `view`
 
 ### Notes
 
@@ -965,38 +983,38 @@ When making an `add` or `edit` request:
 * The `telephoneExtension` field is always nullable and can only be set when the `telephoneNumber` field is populated;
 * Some other required fields are also nullable depending on the value of the `type` field, as specified in the table below, however the `forename` field must be set if the `surname` field is populated, and vice versa.
 
-Contact type | Nullable fields
------------- | ---------------
-Accounts     | None
-Alerts       | `forename`, `surname`, `telephoneNumber`
-Complaints   | `forename`, `surname`, `telephoneNumber`
-General      | `emailAddress` or `telephoneNumber` (but not both)
-Nuisance     | `forename`, `surname`, `telephoneNumber`
-Primary      | None
-Rates        | `forename`, `surname`, `telephoneNumber`
-Reports      | `forename`, `surname`, `telephoneNumber`
-Routing      | `forename`, `surname`, `telephoneNumber`
-Technical    | None
+Contact&nbsp;type | Nullable&nbsp;fields
+----------------- | --------------------
+Accounts          | None
+Alerts            | `forename`, `surname`, `telephoneNumber`
+Complaints        | `forename`, `surname`, `telephoneNumber`
+General           | `emailAddress` or `telephoneNumber` (but not both)
+Nuisance          | `forename`, `surname`, `telephoneNumber`
+Primary           | None
+Rates             | `forename`, `surname`, `telephoneNumber`
+Reports           | `forename`, `surname`, `telephoneNumber`
+Routing           | `forename`, `surname`, `telephoneNumber`
+Technical         | None
 
 ### Additional dynamic information
 
 The following additional information is provided [dynamically](#requests):
 
-Name           | Description                                           | [Data&nbsp;type](#data-types-and-validation) | Array
--------------- | ------------------------------------------------------| -------------------------------------------- | -----
-`barredRanges` | List of telephone number ranges barred on our network | `text`                                       | Yes
+Name                 | Description                                           | [Data&nbsp;type](#data-types-and-validation) | Array
+-------------------- | ------------------------------------------------------| -------------------------------------------- | -----
+`barredNumberRanges` | List of telephone number ranges barred on our network | `phoneRange`                                 | Yes
 
 ### API codes
 
 The following [API codes](#responses) can be returned by this object:
 
-API code | Description
--------- | -----------
-407      | Contact already exists
-408      | Customer should have at least one primary, accounts and technical contact
-409      | Customer has reports distributed via email
-418      | No changes effected
-432      | Number range invalid
+API&nbsp;code | Description                                                               | Returned&nbsp;by
+------------- | ------------------------------------------------------------------------- | ----------------
+407           | Contact already exists                                                    | `add`,&nbsp;`edit`
+408           | Customer should have at least one primary, accounts and technical contact | `edit`,&nbsp;`remove`
+409           | Customer has reports distributed via email                                | `edit`,&nbsp;`remove`
+418           | No changes effected                                                       | `edit`,&nbsp;`remove`
+432           | Telephone number range invalid                                            | `add`,&nbsp;`edit`
 
 ## Dial Sure Summary
 
@@ -1008,14 +1026,14 @@ This object provides a summary of recent Dial Sure PPC charges.
 
 ### Fields
 
-Name            | Description             | Required for | Returned by
---------------- | ----------------------- | ------------ | -----------
-`calls`         | Number of calls         |              | `view`
-`cost`          | Dial Sure cost&nbsp;(£) |              | `view`
-`customerID`    | Customer&nbsp;ID        |              | `view`
-`date`          | Date                    |              | `view`
-`PPCrate`       | Dial Sure PPC rate      |              | `view`
-`referenceName` | Customer reference name |              | `view`
+Name            | Description             | Required&nbsp;for | Returned&nbsp;by
+--------------- | ----------------------- | ----------------- | ----------------
+`calls`         | Number of calls         |                   | `view`
+`cost`          | Dial Sure cost&nbsp;(£) |                   | `view`
+`customerID`    | Customer&nbsp;ID        |                   | `view`
+`date`          | Date                    |                   | `view`
+`PPCrate`       | Dial Sure PPC rate      |                   | `view`
+`referenceName` | Customer reference name |                   | `view`
 
 ### Additional view information
 
@@ -1039,17 +1057,17 @@ This object provides information regarding customer invoices.
 
 ### Fields
 
-Name               | Description                 | Required for | Returned by
------------------- | --------------------------- | ------------ | -----------
-`customerID`       | Customer&nbsp;ID            |              | `view`
-`date`             | Date                        |              | `view`
-`grossAmount`      | Gross amount&nbsp;(£)       |              | `view`
-`invoiceNumber`    | Invoice number              | `download`   | `view`
-`netAmount`        | Net amount&nbsp;(£)         |              | `view`
-`referenceName`    | Customer reference name     |              | `view`
-`type`             | Invoice type                |              | `view`
-`VAT`              | VAT&nbsp;(£)                |              | `view`
-`VATreverseCharge` | VAT reverse charge&nbsp;(£) |              | `view`
+Name               | Description                 | Required&nbsp;for | Returned&nbsp;by
+------------------ | --------------------------- | ----------------- | ----------------
+`customerID`       | Customer&nbsp;ID            |                   | `view`
+`date`             | Date                        |                   | `view`
+`grossAmount`      | Gross amount&nbsp;(£)       |                   | `view`
+`invoiceNumber`    | Invoice number              | `download`        | `view`
+`netAmount`        | Net amount&nbsp;(£)         |                   | `view`
+`referenceName`    | Customer reference name     |                   | `view`
+`type`             | Invoice type                |                   | `view`
+`VAT`              | VAT&nbsp;(£)                |                   | `view`
+`VATreverseCharge` | VAT reverse charge&nbsp;(£) |                   | `view`
 
 ## Outbound Rates
 
@@ -1061,19 +1079,19 @@ This object provides information regarding customer outbound rates.
 
 ### Fields
 
-Name                 | Description      | Required for | Returned by
--------------------- | ---------------- | ------------ | -----------
-`customerID`         | Customer&nbsp;ID | `view`       | 
-`description`        | Rate description |              | `view`
-`month`              | Month            | `view`       |
-`PPCday`             | PPC daytime      |              | `view`
-`PPCeve`             | PPC evening      |              | `view`
-`PPCwkd`             | PPC weekend      |              | `view`
-`PPMday`             | PPM daytime      |              | `view`
-`PPMeve`             | PPM evening      |              | `view`
-`PPMwkd`             | PPM weekend      |              | `view`
-`prefix`             | Rate prefix      |              | `view`
-`zeroPPMfirstMinute` | See notes        |              | `view`
+Name                 | Description      | Required&nbsp;for | Returned&nbsp;by
+-------------------- | ---------------- | ----------------- | ----------------
+`customerID`         | Customer&nbsp;ID | `view`            | 
+`description`        | Rate description |                   | `view`
+`month`              | Month            | `view`            |
+`PPCday`             | PPC daytime      |                   | `view`
+`PPCeve`             | PPC evening      |                   | `view`
+`PPCwkd`             | PPC weekend      |                   | `view`
+`PPMday`             | PPM daytime      |                   | `view`
+`PPMeve`             | PPM evening      |                   | `view`
+`PPMwkd`             | PPM weekend      |                   | `view`
+`prefix`             | Rate prefix      |                   | `view`
+`zeroPPMfirstMinute` | See notes        |                   | `view`
 
 ### Notes
 
@@ -1086,7 +1104,7 @@ The following additional information is provided [dynamically](#requests):
 Name               | Description                                                        | [Data&nbsp;type](#data-types-and-validation) | Array
 ------------------ | ------------------------------------------------------------------ | -------------------------------------------- | -----
 `rateCardIssueDay` | Day of the month the following month's rate card is made available | `integer`                                    | No
-`specialUKnumbers` | List of special UK telephone numbers allowed on our network        | `text`                                       | Yes
+`specialNumbers`   | List of special UK telephone numbers allowed on our network        | `text`                                       | Yes
 
 ### Additional view information
 
@@ -1106,11 +1124,11 @@ This object handles user passwords for this API.
 
 ### Fields
 
-Name         | Description          | Required for | Returned by
------------- | -------------------- | ------------ | -----------
-`expiryDate` | Password expiry date |              | `reset`
-`password`   | User password        | `edit`       | `reset`
-`username`   | Username             | `reset`      |
+Name         | Description          | Required&nbsp;for | Returned&nbsp;by
+------------ | -------------------- | ----------------- | ----------------
+`expiryDate` | Password expiry date |                   | `reset`
+`password`   | User password        | `edit`            | `reset`
+`username`   | Username             | `reset`           |
 
 ### Notes
 
@@ -1120,9 +1138,9 @@ Users can only edit their own password. Resetting another user's password return
 
 The following [API codes](#responses) can be returned by this object:
 
-API code | Description
--------- | -----------
-418      | No changes effected
+API&nbsp;code | Description         | Returned&nbsp;by
+------------- | ------------------- | ----------------
+418           | No changes effected | `edit` 
 
 ## Report Distribution
 
@@ -1134,15 +1152,15 @@ This object handles the distribution of automated reports offered by Nexbridge.
 
 ### Fields
 
-Name            | Description             | Required for     | Returned by
---------------- | ----------------------- | ---------------- | -----------
-`bespoke`       | See notes               |                  | `view`
-`customerID`    | Customer&nbsp;ID        | `add`, `edit`    | `view`
-`frequency`     | Distribution frequency  | `add`, `edit`    | `view`
-`method`        | Distribution method     | `add`, `edit`    | `view`
-`objectID`      | Object&nbsp;ID          | `edit`, `remove` | `add`, `view`
-`referenceName` | Customer reference name |                  | `view`
-`type`          | Report type             | `add`, `edit`    | `view`
+Name            | Description             | Required&nbsp;for     | Returned&nbsp;by
+--------------- | ----------------------- | --------------------- | ----------------
+`bespoke`       | See notes               |                       | `view`
+`customerID`    | Customer&nbsp;ID        | `add`,&nbsp;`edit`    | `view`
+`frequency`     | Distribution frequency  | `add`,&nbsp;`edit`    | `view`
+`method`        | Distribution method     | `add`,&nbsp;`edit`    | `view`
+`objectID`      | Object&nbsp;ID          | `edit`,&nbsp;`remove` | `add`,&nbsp;`view`
+`referenceName` | Customer reference name |                       | `view`
+`type`          | Report type             | `add`,&nbsp;`edit`    | `view`
 
 ### Notes
 
@@ -1154,12 +1172,139 @@ The `edit` and `remove` actions are only available for standard reports.
 
 The following [API codes](#responses) can be returned by this object:
 
-API code | Description
--------- | -----------
-411      | Report already exists
-412      | Reports contact required
-413      | SFTP details required
-418      | No changes effected
+API&nbsp;code | Description              | Returned&nbsp;by
+------------- | ------------------------ | ----------------
+411           | Report already exists    | `add`,&nbsp;`edit`
+412           | Reports contact required | `add`,&nbsp;`edit`
+413           | SFTP details required    | `add`,&nbsp;`edit`
+418           | No changes effected      | `edit`,&nbsp;`remove`
+
+## Route
+
+This object handles telephony routes.
+
+### URL
+
+`/Route`
+
+### Fields
+
+Name                   | Description                   | Required&nbsp;for     | Returned&nbsp;by
+---------------------- | ----------------------------- | --------------------- | ----------------
+`application`          | Routing application           |                       | `view`
+`applicationArguments` | Routing application arguments |                       | `view`
+`compliant`            | Compliance confirmation       | `edit`                |
+`customerID`           | Customer&nbsp;ID              | `add`,&nbsp;`edit`    | `view`
+`objectID`             | Object&nbsp;ID                | `edit`,&nbsp;`remove` | `add`,&nbsp;`edit`,&nbsp;`view`
+`referenceName`        | Customer reference name       |                       | `view`
+`service`              | Routing service               | `add`,&nbsp;`edit`    |
+`serviceArguments`     | Routing service arguments     | `add`,&nbsp;`edit`    |
+
+### Notes
+
+Routing applications are split into **features** and **services**. Each route is comprised of one service and zero or more features applied to that service. Details of which features/services are available for inbound/outbound routes are provided dynamically. The argument(s) required for each service are specified in the table below; where none are required, the `serviceArguments` field must still be present in the request with its value set to an empty string.
+
+When making an `edit` request, an inbound service cannot be changed to an outbound service, and vice versa.
+
+The `compliant` field is only required for an `edit` request when removing the `enableTPS` feature from a route.
+
+Routing&nbsp;service | Number&nbsp;of&nbsp;arguments | Argument&nbsp;[data&nbsp;type](#data-types-and-validation)
+-------------------- | ----------------------------- | ----------------------------------------------------------
+`simpleTranslation`  | 1                             | `host` or `routablePhone`
+`teleswitch`         | 0                             |
+
+### Additional dynamic information
+
+The following additional information is provided [dynamically](#requests):
+
+Name                  | Description                                                                       | [Data&nbsp;type](#data-types-and-validation) | Array
+--------------------- | --------------------------------------------------------------------------------- | -------------------------------------------- | -----
+`availableFeatures`   | List of available routing features, subdivided into `inbound` and `outbound`      | `text`                                       | Yes
+`availableServices`   | List of available routing services, subdivided into `inbound` and `outbound`      | `text`                                       | Yes
+`barredNumberRanges`  | List of telephone number ranges barred on our network                             | `phoneRange`                                 | Yes
+`NexbridgeInboundIPs` | List of IP addresses from which inbound calls can be received from our network    | `IP`                                         | Yes
+`reservedCIDRranges`  | List of reserved IP address ranges that are not allowed as an inbound destination | `CIDR`                                       | Yes
+
+### API codes
+
+The following [API codes](#responses) can be returned by this object:
+
+API&nbsp;code | Description                                          | Returned&nbsp;by
+------------- | ---------------------------------------------------- | ----------------
+418           | No changes effected                                  | `edit`,&nbsp;`remove`
+424           | Route still in use                                   | `remove`
+426           | Cannot route to telephone number hosted by Nexbridge | `add`,&nbsp;`edit`
+428           | TPS screening only allowed for UK CLIs               | `edit`
+
+## Routing CLI
+
+This object handles CLI-based outbound routing.
+
+### URL
+
+`/RoutingCLI`
+
+### Fields
+
+Name            | Description               | Required&nbsp;for     | Returned&nbsp;by
+--------------- | ------------------------- | --------------------- | ----------------
+`compliant`     | Compliance confirmation   | `add`,&nbsp;`edit`    |
+`customerID`    | Customer&nbsp;ID          | `add`,&nbsp;`edit`    | `view`
+`objectID`      | Object&nbsp;ID            | `edit`,&nbsp;`remove` | `add`,&nbsp;`view`
+`referenceName` | Customer reference name   |                       | `view`
+`routeID`       | See notes                 | `add`,&nbsp;`edit`    | `view`
+`routingCLI`    | Outbound routing&nbsp;CLI | `add`,&nbsp;`edit`    | `view`
+
+### Notes
+
+The `routeID` field links the outbound routing CLI with its corresponding [route](#route).
+
+### API codes
+
+The following [API codes](#responses) can be returned by this object:
+
+API&nbsp;code | Description                           | Returned&nbsp;by
+------------- | ------------------------------------- | ----------------
+418           | No changes effected                   | `add`,&nbsp;`edit`,&nbsp;`remove`
+419           | Telephone number in use               | `add`,&nbsp;`edit`
+422           | Valid inbound route required          | `add`,&nbsp;`edit`
+427           | Telephone number has been blacklisted | `add`,&nbsp;`edit`
+
+## Routing DNI
+
+This object handles the routing for telephone numbers hosted on our network.
+
+### URL
+
+`/RoutingDNI`
+
+### Fields
+
+Name            | Description                   | Required&nbsp;for  | Returned&nbsp;by
+--------------- | ----------------------------- | ------------------ | ----------------
+`customerID`    | Customer&nbsp;ID              | `add`              | `view`
+`numberRange`   | Telephone number range        | `add`              |
+`quantity`      | Quantity of telephone numbers | `add`              |
+`referenceName` | Customer reference name       |                    | `view`
+`routeID`       | See notes                     | `add`,&nbsp;`edit` | `view`
+`routingDNI`    | Hosted telephone number       | `edit`             | `add`,&nbsp;`view`
+
+### Notes
+
+The `routeID` field links the hosted telephone number with its corresponding [route](#route).
+
+In addition to the usual list of available values, the `enumerate` action for the `numberRange` field also returns the short code for each telephone number range as the corresponding array key.
+
+### API codes
+
+The following [API codes](#responses) can be returned by this object:
+
+API&nbsp;code | Description                                              | Returned&nbsp;by
+------------- | -------------------------------------------------------- | ----------------
+418           | No changes effected                                      | `add`,&nbsp;`edit`
+419           | Telephone number in use                                  | `edit`
+422           | Valid inbound route required                             | `add`,&nbsp;`edit`
+434           | Allocation limit reached for this telephone number range | `add`
 
 ## SFTP Details
 
@@ -1171,17 +1316,17 @@ This object handles the SFTP details used for automated uploads.
 
 ### Fields
 
-Name            | Description             | Required for     | Returned by
---------------- | ----------------------- | ---------------- | -----------
-`customerID`    | Customer&nbsp;ID        | `add`, `edit`    | `view`
-`directory`     | SFTP directory          | `add`, `edit`    | `view`
-`host`          | SFTP host               | `add`, `edit`    | `view`
-`objectID`      | Object&nbsp;ID          | `edit`, `remove` | `add`, `view`
-`password`      | SFTP password           | `add`, `edit`    | `view`
-`port`          | SFTP port               | `add`, `edit`    | `view`
-`referenceName` | Customer reference name |                  | `view`
-`type`          | Data type               | `add`, `edit`    | `view`
-`username`      | SFTP username           | `add`, `edit`    | `view`
+Name            | Description             | Required&nbsp;for      | Returned&nbsp;by
+--------------- | ----------------------- | ---------------------- | ----------------
+`customerID`    | Customer&nbsp;ID        | `add`,&nbsp;`edit`     | `view`
+`directory`     | SFTP directory          | `add`,&nbsp;`edit`     | `view`
+`host`          | SFTP host               | `add`,&nbsp;`edit`     | `view`
+`objectID`      | Object&nbsp;ID          | `edit`,&nbsp;`remove`  | `add`,&nbsp;`view`
+`password`      | SFTP password           | `add`,&nbsp;`edit`     | `view`
+`port`          | SFTP port               | `add`,&nbsp;`edit`     | `view`
+`referenceName` | Customer reference name |                        | `view`
+`type`          | Data type               | `add`,&nbsp;`edit`     | `view`
+`username`      | SFTP username           | `add`,&nbsp;`edit`     | `view`
 
 ### Notes
 
@@ -1191,22 +1336,22 @@ When making an `add` or `edit` request, the `directory` field is nullable.
 
 The following additional information is provided [dynamically](#requests):
 
-Name                           | Description                                                               | [Data&nbsp;type](#data-types-and-validation) | Array
------------------------------- | ------------------------------------------------------------------------- | -------------------------------------------- | -----
-`callRecordingUploadFrequency` | How often call recordings are uploaded via SFTP, in minutes               | `integer`                                    | No
-`NexbridgeCIDRranges`          | List of IP address ranges to be allowed through the SFTP host firewall    | `CIDR`                                       | Yes
-`rateCardIssueDay`             | Day of the month the following month's rate card is made available        | `integer`                                    | No
-`reservedCIDRranges`           | List of reserved IP address ranges that are not allowed for the SFTP host | `CIDR`                                       | Yes
+Name                       | Description                                                               | [Data&nbsp;type](#data-types-and-validation) | Array
+-------------------------- | ------------------------------------------------------------------------- | -------------------------------------------- | -----
+`NexbridgeCIDRranges`      | List of IP address ranges to be allowed through the SFTP host firewall    | `CIDR`                                       | Yes
+`rateCardIssueDay`         | Day of the month the following month's rate card is made available        | `integer`                                    | No
+`recordingUploadFrequency` | How often call recordings are uploaded via SFTP, in minutes               | `integer`                                    | No
+`reservedCIDRranges`       | List of reserved IP address ranges that are not allowed for the SFTP host | `CIDR`                                       | Yes
 
 ### API codes
 
 The following [API codes](#responses) can be returned by this object:
 
-API code | Description
--------- | -----------
-410      | Customer has reports distributed via SFTP
-414      | SFTP details of this type already exist for this customer
-418      | No changes effected
+API&nbsp;code | Description                                               | Returned&nbsp;by
+------------- | --------------------------------------------------------- | ----------------
+410           | Customer has reports distributed via SFTP                 | `edit`,&nbsp;`remove`
+414           | SFTP details of this type already exist for this customer | `add`,&nbsp;`edit`
+418           | No changes effected                                       | `edit`,&nbsp;`remove`
 
 ## User
 
@@ -1218,17 +1363,17 @@ This object handles the users able to access this API.
 
 ### Fields
 
-Name            | Description             | Required for     | Returned by
---------------- | ----------------------- | ---------------- | -----------
-`active`        | See notes               | `edit`           | `view`
-`customerID`    | Customer&nbsp;ID        | `add`, `edit`    | `view`
-`expiryDate`    | Password expiry date    |                  | `add`, `edit`
-`objectID`      | Object&nbsp;ID          | `edit`, `remove` | `add`, `view`
-`password`      | User password           |                  | `add`, `edit`
-`passwordSet`   | See notes               |                  | `view`
-`referenceName` | Customer reference name |                  | `view`
-`role`          | User role               | `add`, `edit`    | `view`
-`username`      | Username                | `add`, `edit`    | `view`
+Name            | Description             | Required&nbsp;for      | Returned&nbsp;by
+--------------- | ----------------------- | ---------------------- | ----------------
+`active`        | See notes               | `edit`                 | `view`
+`customerID`    | Customer&nbsp;ID        | `add`,&nbsp;`edit`     | `view`
+`expiryDate`    | Password expiry date    |                        | `add`,&nbsp;`edit`
+`objectID`      | Object&nbsp;ID          | `edit`,&nbsp;`remove`  | `add`,&nbsp;`view`
+`password`      | User password           |                        | `add`,&nbsp;`edit`
+`passwordSet`   | See notes               |                        | `view`
+`referenceName` | Customer reference name |                        | `view`
+`role`          | User role               | `add`,&nbsp;`edit`     | `view`
+`username`      | Username                | `add`,&nbsp;`edit`     | `view`
 
 ### Notes
 
@@ -1257,9 +1402,10 @@ Name              | Description                               | [Data&nbsp;type]
 
 The following [API codes](#responses) can be returned by this object:
 
-API code | Description
--------- | -----------
-406      | User already exists
-418      | No changes effected
+API&nbsp;code | Description         | Returned&nbsp;by
+------------- | ------------------- | ----------------
+406           | User already exists | `add`,&nbsp;`edit`
+417           | Role not available  | `add`,&nbsp;`edit`
+418           | No changes effected | `edit`,&nbsp;`remove`
 
 &nbsp;
