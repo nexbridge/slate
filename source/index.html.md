@@ -1235,6 +1235,7 @@ API&nbsp;code | Description                                          | Returned&
 424           | Route still in use                                   | `remove`
 426           | Cannot route to telephone number hosted by Nexbridge | `add`,&nbsp;`edit`
 428           | TPS screening only allowed for UK CLIs               | `edit`
+432           | Telephone number range invalid                       | `add`,&nbsp;`edit`
 
 ## Routing CLI
 
@@ -1269,6 +1270,7 @@ API&nbsp;code | Description                           | Returned&nbsp;by
 419           | Telephone number in use               | `add`,&nbsp;`edit`
 422           | Valid inbound route required          | `add`,&nbsp;`edit`
 427           | Telephone number has been blacklisted | `add`,&nbsp;`edit`
+432           | Telephone number range invalid        | `add`,&nbsp;`edit`
 
 ## Routing DNI
 
@@ -1293,7 +1295,9 @@ Name            | Description                   | Required&nbsp;for  | Returned&
 
 The `routeID` field links the hosted telephone number with its corresponding [route](#route).
 
-In addition to the usual list of available values, the `enumerate` action for the `numberRange` field also returns the short code for each telephone number range as the corresponding array key.
+### Additional dynamic information
+
+As well as the usual list of available values, the `enumerate` action for the `numberRange` field also returns the short code for each telephone number range as the corresponding array key.
 
 ### API codes
 
