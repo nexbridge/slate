@@ -1297,7 +1297,7 @@ API&nbsp;code | Description                           | Returned&nbsp;by
 
 ## Routing DNI
 
-This object handles the routing for telephone numbers hosted on our network.
+This object handles the call routing for telephone numbers hosted on our network.
 
 ### URL
 
@@ -1379,6 +1379,40 @@ API&nbsp;code | Description                                               | Retu
 410           | Customer has reports distributed via SFTP                 | `edit`,&nbsp;`remove`
 414           | SFTP details of this type already exist for this customer | `add`,&nbsp;`edit`
 418           | No changes effected                                       | `edit`,&nbsp;`remove`
+
+## Source IP
+
+This object handles the source IP addresses used to send outbound calls to our network.
+
+### URL
+
+`/SourceIP`
+
+### Fields
+
+Name            | Description             | Required&nbsp;for     | Returned&nbsp;by
+--------------- | ----------------------- | --------------------- | ----------------
+`customerID`    | Customer&nbsp;ID        | `add`,&nbsp;`edit`    | `view`
+`objectID`      | Object&nbsp;ID          | `edit`,&nbsp;`remove` | `add`,&nbsp;`view`
+`referenceName` | Customer reference name |                       | `view`
+`sourceIP`      | Source IP address       | `add`,&nbsp;`edit`    | `view`
+
+### Additional dynamic information
+
+The following additional information is provided [dynamically](#requests):
+
+Name                 | Description                                                                    | [Data&nbsp;type](#data-types-and-validation) | Array
+-------------------- | ------------------------------------------------------------------------------ | -------------------------------------------- | -----
+`reservedCIDRranges` | List of reserved IP address ranges that are not allowed as a source IP address | `CIDR`                                       | Yes
+
+### API codes
+
+The following [API codes](#responses) can be returned by this object:
+
+API&nbsp;code | Description         | Returned&nbsp;by
+------------- | ------------------- | ----------------
+418           | No changes effected | `edit`,&nbsp;`remove`
+430           | IP address in use   | `add`,&nbsp;`edit`
 
 ## User
 
