@@ -1240,13 +1240,12 @@ Routing&nbsp;service | Number&nbsp;of&nbsp;arguments | Argument&nbsp;[data&nbsp;
 
 The following additional information is provided [dynamically](#requests):
 
-Name                  | Description                                                                       | [Data&nbsp;type](#data-types-and-validation) | Array
---------------------- | --------------------------------------------------------------------------------- | -------------------------------------------- | -----
-`availableFeatures`   | List of available routing features, subdivided into `inbound` and `outbound`      | `text`                                       | Yes
-`availableServices`   | List of available routing services, subdivided into `inbound` and `outbound`      | `text`                                       | Yes
-`barredNumberRanges`  | List of telephone number ranges barred on our network                             | `phoneRange`                                 | Yes
-`NexbridgeInboundIPs` | List of IP addresses from which inbound calls can be received from our network    | `IP`                                         | Yes
-`reservedCIDRranges`  | List of reserved IP address ranges that are not allowed as an inbound destination | `CIDR`                                       | Yes
+Name                 | Description                                                                       | [Data&nbsp;type](#data-types-and-validation) | Array
+-------------------- | --------------------------------------------------------------------------------- | -------------------------------------------- | -----
+`availableFeatures`  | List of available routing features, subdivided into `inbound` and `outbound`      | `text`                                       | Yes
+`availableServices`  | List of available routing services, subdivided into `inbound` and `outbound`      | `text`                                       | Yes
+`barredNumberRanges` | List of telephone number ranges barred on our network                             | `phoneRange`                                 | Yes
+`reservedCIDRranges` | List of reserved IP address ranges that are not allowed as an inbound destination | `CIDR`                                       | Yes
 
 ### API codes
 
