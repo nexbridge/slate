@@ -965,10 +965,6 @@ Name         | Description                         | Required&nbsp;for | Returne
 `source`     | Call source                         |                   | `view`
 `timeband`   | Time band                           |                   | `view`
 
-### Notes
-
-Sorting is not available for this object due to the size of the data sets involved.
-
 ### API codes
 
 The following [API codes](#responses) can be returned by this object:
